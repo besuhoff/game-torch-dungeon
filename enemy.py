@@ -44,8 +44,6 @@ class Enemy(ScreenObject):
 
     def can_see_player(self):
         player: Player | None = self._world.player
-        walls: list[Wall] = self._world.walls
-
         if not player or self._world.is_game_over():
             return False
 
@@ -57,11 +55,12 @@ class Enemy(ScreenObject):
         if distance > self.torch_radius:
             return False
 
-        # Check if any walls block the line of sight
-        for wall in walls:
-            left, top = wall.get_left_top_corner()
+        # Get only nearby walls for line of sight check
+        nearby_walls = self._world.get_neighboring_objects(self.world_x, self.world_y, self._world.walls)
 
-            # Line-rectangle intersection check
+        # Check if any nearby walls block the line of sight
+        for wall in nearby_walls:
+            left, top = wall.get_left_top_corner()
             if geometry.line_intersects_rect(self.world_x, self.world_y, player.world_x, player.world_y, 
                                        left, top, 
                                        wall.width, wall.height):
@@ -72,28 +71,34 @@ class Enemy(ScreenObject):
         if self.can_see_player():
             return
 
+        dt = self._world.dt  # Get time delta in seconds
         dy = 0
         dx = 0
 
         if self.wall.orientation == 'vertical':
             # Move up and down along vertical walls
-            dy = self.speed * self.direction
+            dy = self.speed * self.direction * dt
         else:
             # Move left and right along horizontal walls
-            dx = self.speed * self.direction
+            dx = self.speed * self.direction * dt
 
         # Check collisions with adjusted wall positions
         collision = False
         collision_rect = self.get_collision_rect(dx, dy)
-        walls: list[Wall] = self._world.walls
-        for wall in walls:
+        
+        # Get only nearby walls and enemies
+        nearby_walls = self._world.get_neighboring_objects(self.world_x, self.world_y, self._world.walls)
+        nearby_enemies = self._world.get_neighboring_objects(self.world_x, self.world_y, self._world.enemies)
+        
+        # Check collisions with nearby walls
+        for wall in nearby_walls:
             collision = wall.check_collision(*collision_rect)
             if collision:
                 break
         
+        # Check collisions with nearby enemies
         if not collision:
-            enemies: list[Enemy] = self._world.enemies
-            for enemy in enemies:
+            for enemy in nearby_enemies:
                 if enemy == self:
                     continue
 
@@ -160,7 +165,11 @@ class Enemy(ScreenObject):
             texture_x = texture_x - self.texture_size / 2
             texture_y = texture_y - self.texture_size / 2
             bullet_start_x, bullet_start_y = geometry.rotate_point(texture_x, texture_y, angle)
-            self.bullets.append(Bullet(self._world, self.world_x + bullet_start_x, self.world_y + bullet_start_y, player.world_x, player.world_y))
+            self.bullets.append(Bullet(self._world, 
+                                    self.world_x + bullet_start_x, 
+                                    self.world_y + bullet_start_y, 
+                                    player.world_x, 
+                                    player.world_y))
             self.shoot_delay = config.ENEMY_SHOOT_DELAY
             self.bullet_sound.play()
 

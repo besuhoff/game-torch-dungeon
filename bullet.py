@@ -17,15 +17,20 @@ class Bullet(ScreenObject):
         dx = target_world_x - world_x
         dy = target_world_y - world_y
         length = math.sqrt(dx * dx + dy * dy)
-        self.dx = (dx / length) * self.speed if length > 0 else 0
-        self.dy = (dy / length) * self.speed if length > 0 else 0
+        # Store normalized direction vector
+        self.dx = dx / length if length > 0 else 0
+        self.dy = dy / length if length > 0 else 0
         self.size = config.BULLET_SIZE
         self.active = True
 
     def move(self):
+        # Calculate actual movement based on speed and delta time
+        move_x = self.dx * self.speed * self._world.dt
+        move_y = self.dy * self.speed * self._world.dt
+
         # Check collisions with adjusted wall positions
         collision = False
-        collision_rect = self.get_collision_rect(self.dx, self.dy)
+        collision_rect = self.get_collision_rect(move_x, move_y)
         walls: list[Wall] = self._world.walls
         for wall in walls:
             collision = wall.check_collision(*collision_rect)
@@ -35,8 +40,8 @@ class Bullet(ScreenObject):
         if collision:
             self.active = False
         else:
-            self.world_x += self.dx
-            self.world_y += self.dy
+            self.world_x += move_x
+            self.world_y += move_y
 
     def draw(self, screen: pygame.Surface):
         screen_x, screen_y = self.get_screen_coordinates()
