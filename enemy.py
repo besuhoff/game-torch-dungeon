@@ -72,15 +72,16 @@ class Enemy(ScreenObject):
         if self.can_see_player():
             return
 
+        dt = self._world.dt  # Get time delta in seconds
         dy = 0
         dx = 0
 
         if self.wall.orientation == 'vertical':
             # Move up and down along vertical walls
-            dy = self.speed * self.direction
+            dy = self.speed * self.direction * dt
         else:
             # Move left and right along horizontal walls
-            dx = self.speed * self.direction
+            dx = self.speed * self.direction * dt
 
         # Check collisions with adjusted wall positions
         collision = False
@@ -160,7 +161,11 @@ class Enemy(ScreenObject):
             texture_x = texture_x - self.texture_size / 2
             texture_y = texture_y - self.texture_size / 2
             bullet_start_x, bullet_start_y = geometry.rotate_point(texture_x, texture_y, angle)
-            self.bullets.append(Bullet(self._world, self.world_x + bullet_start_x, self.world_y + bullet_start_y, player.world_x, player.world_y))
+            self.bullets.append(Bullet(self._world, 
+                                    self.world_x + bullet_start_x, 
+                                    self.world_y + bullet_start_y, 
+                                    player.world_x, 
+                                    player.world_y))
             self.shoot_delay = config.ENEMY_SHOOT_DELAY
             self.bullet_sound.play()
 

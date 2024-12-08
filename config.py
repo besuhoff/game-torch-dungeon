@@ -26,7 +26,7 @@ BULLET_SIZE: Final = 6
 BULLET_SOUND: Final = os.path.join(ASSETS_FOLDER, 'blaster.ogg')
 
 # Player settings
-PLAYER_SPEED: Final = 5
+PLAYER_SPEED: Final = 300  # Units per second
 PLAYER_SIZE: Final = 32
 PLAYER_TEXTURE_SIZE: Final = 64
 PLAYER_TEXTURE_CENTER: Final = (PLAYER_TEXTURE_SIZE / 2 - 1, 26)
@@ -35,16 +35,16 @@ PLAYER_TEXTURE: Final = os.path.join(ASSETS_FOLDER, 'player.png')
 PLAYER_LIVES: Final = 10
 PLAYER_INVULNERABILITY_TIME: Final = 1  # Seconds of invulnerability after getting hit
 PLAYER_HURT_SOUND: Final = os.path.join(ASSETS_FOLDER, 'player-grunt.ogg')
-PLAYER_ROTATION_SPEED: Final = 3  # Degrees per frame
+PLAYER_ROTATION_SPEED: Final = 180  # Degrees per second
 PLAYER_SHOOT_DELAY: Final = 0.2  # Seconds between shots
 PLAYER_BULLET_COLOR: Final = (0, 255, 255)  # Cyan bullets for player
 PLAYER_MAX_BULLETS: Final = 6  # Maximum number of bullets
 PLAYER_BULLET_RECHARGE_TIME: Final = 1  # Seconds to recharge one bullet
 PLAYER_BULLET_RECHARGE_SOUND: Final = os.path.join(ASSETS_FOLDER, 'weapon-reload.ogg')
-PLAYER_BULLET_SPEED: Final = 7
+PLAYER_BULLET_SPEED: Final = 420  # Units per second
 
 # Enemy settings
-ENEMY_SPEED: Final = 2
+ENEMY_SPEED: Final = 120  # Units per second
 ENEMY_SIZE: Final = 20
 ENEMY_TEXTURE: Final = os.path.join(ASSETS_FOLDER, 'enemy.png')
 ENEMY_TEXTURE_SIZE: Final = 64
@@ -54,7 +54,7 @@ ENEMY_BLOOD_TEXTURE: Final = os.path.join(ASSETS_FOLDER, 'blood-stain.png')
 ENEMY_BLOOD_TEXTURE_SIZE: Final = 32
 ENEMY_SHOOT_DELAY: Final = 1 # Seconds between shots
 ENEMY_HURT_SOUND: Final = os.path.join(ASSETS_FOLDER, 'enemy-grunt.ogg')
-ENEMY_BULLET_SPEED: Final = 4
+ENEMY_BULLET_SPEED: Final = 240  # Units per second
 ENEMY_DEATH_TRACE_TIME: Final = 5  # Seconds the blood stain is visible
 
 # Bonuses settings

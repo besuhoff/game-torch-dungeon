@@ -80,9 +80,9 @@ class Player(ScreenObject):
         # Convert rotation to radians for math calculations
         rotation_rad = math.radians(self.rotation)
         
-        # Calculate movement vector based on rotation
-        dx = math.sin(rotation_rad) * forward * config.PLAYER_SPEED
-        dy = math.cos(rotation_rad) * forward * config.PLAYER_SPEED
+        # Calculate movement vector based on rotation and delta time
+        dx = math.sin(rotation_rad) * forward * config.PLAYER_SPEED * self._world.dt
+        dy = math.cos(rotation_rad) * forward * config.PLAYER_SPEED * self._world.dt
 
         enemies = list(filter(lambda enemy: not enemy.dead, self._world.enemies))
         collidable_objects: list[ScreenObject] = [*self._world.walls, *enemies]
@@ -132,7 +132,7 @@ class Player(ScreenObject):
             self.debug['collision_hits'] = hits
 
     def rotate(self, angle_change: float):
-        self.rotation = (self.rotation - angle_change * self.rotation_speed) % 360
+        self.rotation = (self.rotation - angle_change * self.rotation_speed * self._world.dt) % 360
 
     def get_texture_rotation(self):
         return self.rotation
