@@ -40,6 +40,9 @@ class Wall(ScreenObject):
 
         if config.DEBUG:
             pygame.draw.rect(screen, (255, 0, 0), self.get_screen_collision_rect(), 1)
+            font = pygame.font.Font(None, 18)
+            text = font.render(f"{self._id}", True, (255, 255, 255))
+            screen.blit(text, (x + 2, y + 2))
 
     def get_left_top_corner(self):
         correction_w = 0

@@ -3,12 +3,16 @@ from world import World
 import pygame
 
 class ScreenObject(ABC):
+    _id: int = 0
+
     def __init__(self, world: World, world_x: float, world_y: float, width: float, height: float):
         self._world = world
         self.width = width
         self.height = height
         self.world_x = world_x
         self.world_y = world_y
+        ScreenObject._id += 1
+        self._id = ScreenObject._id
 
     def get_screen_coordinates(self):
         return self._world.world_to_screen_coordinates(self.world_x, self.world_y)

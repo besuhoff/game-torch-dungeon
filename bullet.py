@@ -1,3 +1,4 @@
+from operator import is_
 from screen_object import ScreenObject
 from wall import Wall
 from world import World
@@ -10,13 +11,14 @@ class Bullet(ScreenObject):
         self.target_world_y = target_world_y
         self.color = color
         self.is_enemy = is_enemy
+        self.speed = config.ENEMY_BULLET_SPEED if is_enemy else config.PLAYER_BULLET_SPEED
         
         # Calculate direction vector
         dx = target_world_x - world_x
         dy = target_world_y - world_y
         length = math.sqrt(dx * dx + dy * dy)
-        self.dx = (dx / length) * config.BULLET_SPEED if length > 0 else 0
-        self.dy = (dy / length) * config.BULLET_SPEED if length > 0 else 0
+        self.dx = (dx / length) * self.speed if length > 0 else 0
+        self.dy = (dy / length) * self.speed if length > 0 else 0
         self.size = config.BULLET_SIZE
         self.active = True
 
@@ -59,6 +61,6 @@ class Bullet(ScreenObject):
             
         hits = []
         for enemy in self._world.enemies:
-            if enemy.check_collision(*self.get_collision_rect()):
+            if not enemy.dead and enemy.check_collision(*self.get_collision_rect()):
                 hits.append(enemy)
         return hits

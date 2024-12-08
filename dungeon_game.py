@@ -1,7 +1,7 @@
 from calendar import c
 from pydoc import text
 import pygame
-from aid_kit import AidKit
+from bonus import Bonus
 import config
 from player import Player
 from wall import Wall
@@ -18,7 +18,7 @@ GRAY = (128, 128, 128)
 STONE_GRAY = (100, 100, 100)
 WALL_BROWN = (139, 69, 19)
 
-def draw_panel(screen, world: World):
+def draw_panel(screen: pygame.Surface, world: World):
     if not world.player:
         return
 
@@ -38,9 +38,17 @@ def draw_panel(screen, world: World):
     bullets_rect.top = 10
     screen.blit(bullets_text, bullets_rect)
 
+    # Draw night vision
+    if world.player.night_vision_timer > 0:
+        night_vision_text = font.render(f"Night Vision: {world.player.night_vision_timer // config.FRAMERATE}", True, (0, 255, 0))
+        night_vision_rect = night_vision_text.get_rect()
+        night_vision_rect.right = config.SCREEN_WIDTH - 10
+        night_vision_rect.top = 32
+        screen.blit(night_vision_text, night_vision_rect)
+
 def main():
-    world = World(Player, Enemy, Wall, AidKit)
-    screen = pygame.display.set_mode((config.SCREEN_WIDTH, config.SCREEN_HEIGHT))
+    world = World(Player, Enemy, Wall, Bonus)
+    screen = pygame.display.set_mode((config.SCREEN_WIDTH, config.SCREEN_HEIGHT), pygame.RESIZABLE | pygame.SCALED)
     pygame.display.set_caption("Torch Dungeon")
     clock = pygame.time.Clock()
 
@@ -56,7 +64,6 @@ def main():
 
     # Start the game
     world.start_game()
-    player: Player | None = world.player
 
     running = True
     while running:
@@ -64,9 +71,8 @@ def main():
             if event.type == pygame.QUIT:
                 running = False
             elif event.type == pygame.KEYDOWN:
-                if event.key == pygame.K_r and world.is_game_over():  # Press R to restart
+                if event.scancode == 21 and world.is_game_over():  # Press R to restart (scancode 21 is 'R' key)
                     world.start_game()
-                    player = world.player
 
                 if event.key == pygame.K_ESCAPE:
                     running = False

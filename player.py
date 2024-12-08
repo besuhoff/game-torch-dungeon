@@ -1,10 +1,8 @@
-import config
-import geometry
+import pygame, math, random, config, geometry
 from world import World
 from screen_object import ScreenObject
-import pygame, math, random
-from bullet import Bullet  # Import Bullet class
-from aid_kit import AidKit  # Import AidKit class
+from bullet import Bullet
+from bonus import Bonus
 
 class Player(ScreenObject):
     def __init__(self, world: World, world_x: float, world_y: float):
@@ -19,14 +17,18 @@ class Player(ScreenObject):
         self.rotation = 0  # Current rotation angle in degrees
         self.rotation_speed = config.PLAYER_ROTATION_SPEED
         self.bullets = []
-        self.shoot_delay = 0
         self.bullets_left = config.PLAYER_MAX_BULLETS
+
+        self.shoot_delay = 0
         self.recharge_timer = 0
+        self.night_vision_timer = 0
+
         self.bullet_sound = pygame.mixer.Sound(config.BULLET_SOUND)
         self.recharge_sound = pygame.mixer.Sound(config.PLAYER_BULLET_RECHARGE_SOUND)
-        self.enemy_hurt_sound = pygame.mixer.Sound(config.ENEMY_HURT_SOUND)
+        self.recharge_sound.set_volume(0.5)
         self.player_hurt_sound = pygame.mixer.Sound(config.PLAYER_HURT_SOUND)
-        self.heal_sound = pygame.mixer.Sound(config.AID_KIT_PICKUP_SOUND)
+
+        self.debug = {}
 
         try:
             self.surface = pygame.image.load(config.PLAYER_TEXTURE).convert_alpha()
@@ -79,19 +81,52 @@ class Player(ScreenObject):
         dx = math.sin(rotation_rad) * forward * config.PLAYER_SPEED
         dy = math.cos(rotation_rad) * forward * config.PLAYER_SPEED
 
+        enemies = list(filter(lambda enemy: not enemy.dead, self._world.enemies))
+        collidable_objects: list[ScreenObject] = [*self._world.walls, *enemies]
+
         # Check collisions with adjusted wall positions
         collision = False
+        # Check dx and dy separately to allow for alternative movement
+        collision_x = False
+        collision_y = False
         collision_rect = self.get_collision_rect(dx, dy)
+        x_collision_rect = self.get_collision_rect(dx, 0)
+        y_collision_rect = self.get_collision_rect(0, dy)
         
-        for wall in self._world.walls:
-            if wall.check_collision(*collision_rect):
+        hits = []
+
+        for collidable_object in collidable_objects:
+            hit = { "id": collidable_object._id, "total": False, "x": False, "y": False }
+
+            if collidable_object.check_collision(*collision_rect):
                 collision = True
-                break
+                hit['total'] = True
+            
+            if collidable_object.check_collision(*x_collision_rect):
+                collision_x = True
+                hit['x'] = True
+            
+            if collidable_object.check_collision(*y_collision_rect):
+                collision_y = True
+                hit['y'] = True
+
+            if hit['total']:
+                hits.append(hit)
         
-        if not collision:
+        if collision: 
+            if collision_x:
+                dx = 0
+
+            if collision_y:
+                dy = 0
+
+        if dx != 0 or dy != 0:
             self.world_x += dx
             self.world_y += dy
             self._world.offset(dx, dy)
+
+        if config.DEBUG:
+            self.debug['collision_hits'] = hits
 
     def rotate(self, angle_change: float):
         self.rotation = (self.rotation - angle_change * self.rotation_speed) % 360
@@ -105,10 +140,11 @@ class Player(ScreenObject):
             self.invulnerable_timer = config.PLAYER_INVULNERABILITY_TIME * config.FRAMERATE
             self.player_hurt_sound.play()
 
+    def start_night_vision(self):
+        self.night_vision_timer += config.GOOGLES_ACTIVE_TIME * config.FRAMERATE
+
     def heal(self, amount: int):
-        """Heal the player by the given amount, up to max lives"""
         self.lives = min(self.lives + amount, config.PLAYER_LIVES)
-        self.heal_sound.play()
 
     def update(self):
         # Update bullets
@@ -121,16 +157,15 @@ class Player(ScreenObject):
             # Check if bullet hits any enemies
             hits = bullet.check_hits_enemies()
             if hits:
-                self.enemy_hurt_sound.play()
                 bullet.active = False
                 self.bullets.remove(bullet)
                 # Remove hit enemies
                 for enemy in hits:
                     if enemy in self._world.enemies:
-                        self._world.enemies.remove(enemy)
+                        enemy.take_damage()
                         # Chance to spawn aid kit
-                        if random.random() < config.AID_KIT_SPAWN_CHANCE:
-                            self._world.aid_kits.append(AidKit(self._world, enemy.world_x, enemy.world_y))
+                        if random.random() < config.BONUS_SPAWN_CHANCE:
+                            self._world.bonuses.append(Bonus(self._world, enemy.world_x, enemy.world_y))
 
         if self._world.is_game_over():
             return
@@ -140,7 +175,10 @@ class Player(ScreenObject):
             
         if self.shoot_delay > 0:
             self.shoot_delay -= 1
-            
+
+        if self.night_vision_timer > 0:
+            self.night_vision_timer -= 1
+
         # Recharge bullets
         if self.bullets_left < config.PLAYER_MAX_BULLETS:
             self.recharge_timer += 1
@@ -162,8 +200,9 @@ class Player(ScreenObject):
         texture_x = texture_x - self.texture_size / 2
         texture_y = texture_y - self.texture_size / 2
         blink_factor = self.invulnerable_timer * 5 / config.FRAMERATE
+        should_blink = blink_factor - math.floor(blink_factor) < 0.5
 
-        if (self.invulnerable_timer <= 0 or blink_factor - math.floor(blink_factor) < 0.5) and not self._world.is_game_over():
+        if (self.invulnerable_timer <= 0 or should_blink) and not self._world.is_game_over():
             texture_x, texture_y = config.ENEMY_TEXTURE_CENTER
             texture_x = texture_x - self.texture_size / 2
             texture_y = texture_y - self.texture_size / 2
@@ -173,24 +212,35 @@ class Player(ScreenObject):
                 center=(screen_x - rotated_x, screen_y - rotated_y)
             )
             screen.blit(player_surface, rotated_rect.topleft)
-
-        if self.torch_surface != None:
-            # Create torch light effect
-            light_surface = pygame.Surface((config.SCREEN_WIDTH, config.SCREEN_HEIGHT), pygame.SRCALPHA)
-            light_surface.fill((0, 0, 0, 225))
-            
-            current_torch_radius = random.randint(config.TORCH_RADIUS - 5, config.TORCH_RADIUS + 5)
-            scaled_torch = pygame.transform.scale(self.torch_surface, (current_torch_radius * 2, current_torch_radius * 2))
-            
-            # Apply the main torch light
-            if not self._world.is_game_over():
+    
+        # Create torch light effect
+        light_surface = pygame.Surface((config.SCREEN_WIDTH, config.SCREEN_HEIGHT), pygame.SRCALPHA)
+        light_surface.fill(config.COLOR_DARK)
+        
+        # Apply the main torch light
+        if not self._world.is_game_over():
+            if self.torch_surface != None and self.night_vision_timer <= 0:
+                current_torch_radius = random.randint(config.TORCH_RADIUS - 5, config.TORCH_RADIUS + 5)
+                scaled_torch = pygame.transform.scale(self.torch_surface, (current_torch_radius * 2, current_torch_radius * 2))
                 light_surface.blit(scaled_torch, 
-                            (int(screen_x - current_torch_radius), 
-                            int(screen_y - current_torch_radius)), 
-                            special_flags=pygame.BLEND_RGBA_SUB)
-            
+                        (int(screen_x - current_torch_radius), 
+                        int(screen_y - current_torch_radius)), 
+                        special_flags=pygame.BLEND_RGBA_SUB)
+
+            if self.night_vision_timer > 0:
+                light_surface.fill(config.COLOR_NIGHT_VISION)
+
             screen.blit(light_surface, (0, 0))
 
         if config.DEBUG:
             pygame.draw.circle(screen, (0, 255, 0), (screen_x, screen_y), 2)
             pygame.draw.rect(screen, (0, 255, 0), self.get_screen_collision_rect(), 1)
+            font = pygame.font.Font(None, 18)
+            if 'collision_hits' in self.debug:
+                hits = self.debug['collision_hits']
+                text = font.render(f"Collision debug: {hits}", True, (255, 255, 255))
+                screen.blit(text, (4, config.SCREEN_HEIGHT - 20))
+            
+            text = font.render(f"Player position: {(round(self.world_x, 2), round(self.world_y, 2))}", True, (255, 255, 255))
+            screen.blit(text, (4, config.SCREEN_HEIGHT - 40))
+            

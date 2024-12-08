@@ -5,16 +5,16 @@ class World:
     _game_over = False
     CHUNK_SIZE = 800  # Size of each chunk
 
-    def __init__(self, Player, Enemy, Wall, AidKit):
+    def __init__(self, Player, Enemy, Wall, Bonus):
         self.offset_x = 0
         self.offset_y = 0
         self._Player = Player
         self._Enemy = Enemy
         self._Wall = Wall
-        self._AidKit = AidKit
+        self._Bonus = Bonus
         self.walls = []
         self.enemies = []
-        self.aid_kits = []
+        self.bonuses = []
         self.player = None
         self.generated_chunks = set()  # Keep track of generated chunks
         self.torch_sound = pygame.mixer.Sound(config.TORCH_SOUND)
@@ -89,9 +89,8 @@ class World:
             enemy.update()
             
         # Update aid kits
-        for aid_kit in self.aid_kits[:]:
-            if aid_kit.check_player_pickup():
-                self.aid_kits.remove(aid_kit)
+        for bonus in self.bonuses[:]:
+            bonus.update()
                 
     def world_to_screen_coordinates(self, x: float, y: float):
         return x + self.offset_x + config.SCREEN_WIDTH // 2, y + self.offset_y + config.SCREEN_HEIGHT // 2
@@ -121,7 +120,7 @@ class World:
     def start_game(self):
         self.walls = []
         self.enemies = []
-        self.aid_kits = []
+        self.bonuses = []
         self.generated_chunks = set()
         self.create_player()
         self.update_chunks()  # Generate initial chunks
@@ -137,13 +136,13 @@ class World:
         for wall in self.walls:
             wall.draw(screen)
             
-        # Draw aid kits
-        for aid_kit in self.aid_kits:
-            aid_kit.draw(screen)
-            
         # Draw enemies
         for enemy in self.enemies:
             enemy.draw(screen)
+
+        # Draw bonuses
+        for bonus in self.bonuses:
+            bonus.draw(screen)
 
         # Draw player
         if self.player:
