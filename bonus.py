@@ -1,3 +1,4 @@
+import math
 import pygame, random, config
 from screen_object import ScreenObject
 from world import World
@@ -11,7 +12,8 @@ class Bonus(ScreenObject):
         self.pickup_sound = pygame.mixer.Sound(config.BONUS_PICKUP_SOUND)
         self.active = True
         self.type = random.choices([BONUS_TYPE_AID_KIT, BONUS_TYPE_GOGGLES], weights=[5, 1], k=1)[0]
-        
+        self.torch_radius = config.TORCH_RADIUS
+
         try:
             if self.type == BONUS_TYPE_AID_KIT:
                 self.surface = pygame.image.load(config.AID_KIT_TEXTURE).convert_alpha()
@@ -46,7 +48,14 @@ class Bonus(ScreenObject):
     def draw(self, screen: pygame.Surface):
         if not self.active or not self.surface:
             return
-            
+
+        player = self._world.player
+        distance = math.sqrt((self.world_x - player.world_x)**2 + (self.world_y - player.world_y)**2) if player else 0
+        should_draw = (distance <= self.torch_radius or (player and player.night_vision_timer > 0)) and not self._world.is_game_over()
+        
+        if not should_draw:
+            return
+
         screen_x, screen_y = self.get_screen_coordinates()
         screen.blit(self.surface, (screen_x - config.AID_KIT_SIZE / 2, 
                                  screen_y - config.AID_KIT_SIZE / 2))

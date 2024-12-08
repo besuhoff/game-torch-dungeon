@@ -18,6 +18,7 @@ class Player(ScreenObject):
         self.rotation_speed = config.PLAYER_ROTATION_SPEED
         self.bullets = []
         self.bullets_left = config.PLAYER_MAX_BULLETS
+        self.kills = 0
 
         self.shoot_delay = 0
         self.recharge_timer = 0
@@ -230,7 +231,7 @@ class Player(ScreenObject):
             if self.night_vision_timer > 0:
                 light_surface.fill(config.COLOR_NIGHT_VISION)
 
-            screen.blit(light_surface, (0, 0))
+        screen.blit(light_surface, (0, 0))
 
         if config.DEBUG:
             pygame.draw.circle(screen, (0, 255, 0), (screen_x, screen_y), 2)

@@ -1,11 +1,13 @@
 from calendar import c
 from pydoc import text
+from sys import flags, platform
 import pygame
 from bonus import Bonus
 import config
 from player import Player
 from wall import Wall
 from enemy import Enemy
+import asyncio
 
 from world import World
 
@@ -31,24 +33,27 @@ def draw_panel(screen: pygame.Surface, world: World):
     for i in range(world.player.lives):
         screen.blit(heart_texture, (72 + i * 24, 10))
 
+    # Draw kills
+    kills_text = font.render(f"Rewards: {world.player.kills * 10}$", True, (255, 255, 0))
+    screen.blit(kills_text, (10, 32))
+
     # Draw bullets
-    bullets_text = font.render(f"Bullets: {world.player.bullets_left}", True, (0, 255, 255))
-    bullets_rect = bullets_text.get_rect()
-    bullets_rect.right = config.SCREEN_WIDTH - 10
-    bullets_rect.top = 10
-    screen.blit(bullets_text, bullets_rect)
+    bullets_text = font.render(f"Bullets: {world.player.bullets_left * 'I'}", True, (0, 255, 255))
+    screen.blit(bullets_text, (10, 54))
 
     # Draw night vision
     if world.player.night_vision_timer > 0:
         night_vision_text = font.render(f"Night Vision: {world.player.night_vision_timer // config.FRAMERATE}", True, (0, 255, 0))
-        night_vision_rect = night_vision_text.get_rect()
-        night_vision_rect.right = config.SCREEN_WIDTH - 10
-        night_vision_rect.top = 32
-        screen.blit(night_vision_text, night_vision_rect)
+        screen.blit(night_vision_text, (10, 76))
 
-def main():
+async def main():
     world = World(Player, Enemy, Wall, Bonus)
-    screen = pygame.display.set_mode((config.SCREEN_WIDTH, config.SCREEN_HEIGHT), pygame.RESIZABLE | pygame.SCALED)
+    if platform == "emscripten":
+        flags = 0
+    else:
+        flags = pygame.SCALED | pygame.RESIZABLE
+
+    screen = pygame.display.set_mode((config.SCREEN_WIDTH, config.SCREEN_HEIGHT), flags)
     pygame.display.set_caption("Torch Dungeon")
     clock = pygame.time.Clock()
 
@@ -142,7 +147,8 @@ def main():
 
         world.update()
 
+        await asyncio.sleep(0)
+
     pygame.quit()
 
-if __name__ == "__main__":
-    main()
+asyncio.run(main())

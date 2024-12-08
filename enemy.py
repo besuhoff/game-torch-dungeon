@@ -204,3 +204,4 @@ class Enemy(ScreenObject):
         self.hurt_sound.play()
         self.dead_timer = config.ENEMY_DEATH_TRACE_TIME * config.FRAMERATE        
         self.dead = True
+        if player: player.kills += 1

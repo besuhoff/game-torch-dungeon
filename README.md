@@ -21,7 +21,7 @@ pip install pygame
 
 ## Running the Game
 ```bash
-python dungeon_game.py
+python main.py
 ```
 
 ## Controls
