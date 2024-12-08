@@ -84,8 +84,10 @@ class Player(ScreenObject):
         dx = math.sin(rotation_rad) * forward * config.PLAYER_SPEED * self._world.dt
         dy = math.cos(rotation_rad) * forward * config.PLAYER_SPEED * self._world.dt
 
-        enemies = list(filter(lambda enemy: not enemy.dead, self._world.enemies))
-        collidable_objects: list[ScreenObject] = [*self._world.walls, *enemies]
+        nearby_enemies = self._world.get_neighboring_objects(self.world_x, self.world_y, self._world.enemies)
+        nearby_walls = self._world.get_neighboring_objects(self.world_x, self.world_y, self._world.walls)
+        enemies = list(filter(lambda enemy: not enemy.dead, nearby_enemies))
+        collidable_objects: list[ScreenObject] = [*nearby_walls, *enemies]
 
         # Check collisions with adjusted wall positions
         collision = False

@@ -27,6 +27,29 @@ class World:
         chunk_y = y // self.CHUNK_SIZE
         return chunk_x, chunk_y
 
+    def get_neighboring_objects(self, x, y, objects):
+        """Get objects from current and neighboring chunks"""
+        chunk_x, chunk_y = self.get_chunk_coords(x, y)
+        nearby_objects = []
+        
+        # Check objects in current and adjacent chunks
+        for dx in [-1, 0, 1]:
+            for dy in [-1, 0, 1]:
+                chunk_bounds = (
+                    (chunk_x + dx) * self.CHUNK_SIZE,
+                    (chunk_y + dy) * self.CHUNK_SIZE,
+                    self.CHUNK_SIZE,
+                    self.CHUNK_SIZE
+                )
+                for obj in objects:
+                    if (obj.world_x >= chunk_bounds[0] and 
+                        obj.world_x < chunk_bounds[0] + chunk_bounds[2] and
+                        obj.world_y >= chunk_bounds[1] and 
+                        obj.world_y < chunk_bounds[1] + chunk_bounds[3]):
+                        nearby_objects.append(obj)
+        
+        return nearby_objects
+
     def generate_walls_for_chunk(self, chunk_x: float, chunk_y: float):        
         # If chunk already generated, skip
         if (chunk_x, chunk_y) in self.generated_chunks:
@@ -80,17 +103,21 @@ class World:
                     self.generate_walls_for_chunk(current_chunk_x + dx, current_chunk_y + dy)
     
     def update(self):
-        if self.player:
-            self.player.update()
+        if not self.player:
+            return
+        
+        self.player.update()
         
         self.update_chunks()
 
         # Update enemies
-        for enemy in self.enemies[:]:
+        nearby_enemies = self.get_neighboring_objects(-self.offset_x, -self.offset_y, self.enemies)
+        for enemy in nearby_enemies:
             enemy.update()
             
-        # Update aid kits
-        for bonus in self.bonuses[:]:
+        # Update bonuses
+        nearby_bonuses = self.get_neighboring_objects(-self.offset_x, -self.offset_y, self.bonuses)
+        for bonus in nearby_bonuses:
             bonus.update()
                 
     def world_to_screen_coordinates(self, x: float, y: float):
@@ -134,15 +161,18 @@ class World:
 
     def draw(self, screen: pygame.Surface):
         # Draw walls
-        for wall in self.walls:
+        nearby_walls = self.get_neighboring_objects(-self.offset_x, -self.offset_y, self.walls)
+        for wall in nearby_walls:
             wall.draw(screen)
-            
-        # Draw enemies
-        for enemy in self.enemies:
-            enemy.draw(screen)
 
+        # Draw enemies
+        nearby_enemies = self.get_neighboring_objects(-self.offset_x, -self.offset_y, self.enemies)
+        for enemy in nearby_enemies:
+            enemy.draw(screen)
+            
         # Draw bonuses
-        for bonus in self.bonuses:
+        nearby_bonuses = self.get_neighboring_objects(-self.offset_x, -self.offset_y, self.bonuses)
+        for bonus in nearby_bonuses:
             bonus.draw(screen)
 
         # Draw player
