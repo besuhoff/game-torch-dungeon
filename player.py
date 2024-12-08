@@ -23,6 +23,8 @@ class Player(ScreenObject):
         self.shoot_delay = 0
         self.recharge_timer = 0
         self.night_vision_timer = 0
+        self.invulnerable_timer = 0
+        self.recharge_accumulator = 0
 
         self.bullet_sound = pygame.mixer.Sound(config.BULLET_SOUND)
         self.recharge_sound = pygame.mixer.Sound(config.PLAYER_BULLET_RECHARGE_SOUND)
@@ -68,7 +70,7 @@ class Player(ScreenObject):
                                  target_x, target_y, 
                                  color=config.PLAYER_BULLET_COLOR,
                                  is_enemy=False))
-        self.shoot_delay = config.PLAYER_SHOOT_DELAY * config.FRAMERATE
+        self.shoot_delay = config.PLAYER_SHOOT_DELAY
         self.bullets_left -= 1
         
         # Play sound
@@ -138,23 +140,25 @@ class Player(ScreenObject):
     def take_damage(self):
         if self.invulnerable_timer <= 0:
             self.lives -= 1
-            self.invulnerable_timer = config.PLAYER_INVULNERABILITY_TIME * config.FRAMERATE
+            self.invulnerable_timer = config.PLAYER_INVULNERABILITY_TIME
             self.player_hurt_sound.play()
 
     def start_night_vision(self):
-        self.night_vision_timer += config.GOOGLES_ACTIVE_TIME * config.FRAMERATE
+        self.night_vision_timer = config.GOOGLES_ACTIVE_TIME
 
     def heal(self, amount: int):
         self.lives = min(self.lives + amount, config.PLAYER_LIVES)
 
     def update(self):
+        dt = self._world.dt  # Get time delta in seconds
+
         # Update bullets
         for bullet in self.bullets[:]:
             bullet.move()
             if not bullet.active:
                 self.bullets.remove(bullet)
                 continue
-                
+            
             # Check if bullet hits any enemies
             hits = bullet.check_hits_enemies()
             if hits:
@@ -164,29 +168,30 @@ class Player(ScreenObject):
                 for enemy in hits:
                     if enemy in self._world.enemies:
                         enemy.take_damage()
-                        # Chance to spawn aid kit
+                        # Chance to spawn bonus
                         if random.random() < config.BONUS_SPAWN_CHANCE:
                             self._world.bonuses.append(Bonus(self._world, enemy.world_x, enemy.world_y))
 
         if self._world.is_game_over():
             return
-        
+
+        # Update timers
         if self.invulnerable_timer > 0:
-            self.invulnerable_timer -= 1
+            self.invulnerable_timer = max(0, self.invulnerable_timer - dt)
             
         if self.shoot_delay > 0:
-            self.shoot_delay -= 1
+            self.shoot_delay = max(0, self.shoot_delay - dt)
 
         if self.night_vision_timer > 0:
-            self.night_vision_timer -= 1
+            self.night_vision_timer = max(0, self.night_vision_timer - dt)
 
         # Recharge bullets
         if self.bullets_left < config.PLAYER_MAX_BULLETS:
-            self.recharge_timer += 1
-            if self.recharge_timer >= config.PLAYER_BULLET_RECHARGE_TIME * config.FRAMERATE:
+            self.recharge_accumulator += dt
+            if self.recharge_accumulator >= config.PLAYER_BULLET_RECHARGE_TIME:
+                self.recharge_accumulator -= config.PLAYER_BULLET_RECHARGE_TIME
                 self.bullets_left += 1
                 self.recharge_sound.play()
-                self.recharge_timer = 0
 
     def draw(self, screen: pygame.Surface):
         if not self.surface:
@@ -200,7 +205,7 @@ class Player(ScreenObject):
         texture_x, texture_y = config.PLAYER_TEXTURE_CENTER
         texture_x = texture_x - self.texture_size / 2
         texture_y = texture_y - self.texture_size / 2
-        blink_factor = self.invulnerable_timer * 5 / config.FRAMERATE
+        blink_factor = self.invulnerable_timer * 5 / config.PLAYER_INVULNERABILITY_TIME
         should_blink = blink_factor - math.floor(blink_factor) < 0.5
 
         if (self.invulnerable_timer <= 0 or should_blink) and not self._world.is_game_over():
@@ -243,5 +248,4 @@ class Player(ScreenObject):
                 screen.blit(text, (4, config.SCREEN_HEIGHT - 20))
             
             text = font.render(f"Player position: {(round(self.world_x, 2), round(self.world_y, 2))}", True, (255, 255, 255))
-            screen.blit(text, (4, config.SCREEN_HEIGHT - 40))
-            
+            screen.blit(text, (4, config.SCREEN_HEIGHT - 40))            

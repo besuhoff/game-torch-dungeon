@@ -43,7 +43,7 @@ def draw_panel(screen: pygame.Surface, world: World):
 
     # Draw night vision
     if world.player.night_vision_timer > 0:
-        night_vision_text = font.render(f"Night Vision: {world.player.night_vision_timer // config.FRAMERATE}", True, (0, 255, 0))
+        night_vision_text = font.render(f"Night Vision: {int(world.player.night_vision_timer)}", True, (0, 255, 0))
         screen.blit(night_vision_text, (10, 76))
 
 async def main():
@@ -71,7 +71,13 @@ async def main():
     world.start_game()
 
     running = True
+    prev_time = pygame.time.get_ticks()
     while running:
+        # Calculate delta time in seconds
+        current_time = pygame.time.get_ticks()
+        world.dt = (current_time - prev_time) / 1000.0  # Convert to seconds
+        prev_time = current_time
+
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 running = False

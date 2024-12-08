@@ -16,6 +16,7 @@ class World:
         self.enemies = []
         self.bonuses = []
         self.player = None
+        self.dt = 0.0  # Time delta in seconds
         self.generated_chunks = set()  # Keep track of generated chunks
         self.torch_sound = pygame.mixer.Sound(config.TORCH_SOUND)
         self.game_over_sound = pygame.mixer.Sound(config.GAME_OVER_SOUND)

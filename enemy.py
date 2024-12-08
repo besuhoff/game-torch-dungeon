@@ -126,8 +126,10 @@ class Enemy(ScreenObject):
             return 90 * self.direction
 
     def update(self):
+        dt = self._world.dt  # Get time delta in seconds
+
         if self.dead:
-            self.dead_timer -= 1
+            self.dead_timer = max(0, self.dead_timer - dt)
             if self.dead_timer <= 0:
                 self._world.enemies.remove(self)
 
@@ -151,7 +153,7 @@ class Enemy(ScreenObject):
 
         # Shooting logic
         if self.shoot_delay > 0:
-            self.shoot_delay -= 1
+            self.shoot_delay = max(0, self.shoot_delay - dt)
         elif player and self.can_see_player():
             angle = self._get_texture_rotation()
             texture_x, texture_y = config.ENEMY_GUN_END
@@ -159,7 +161,7 @@ class Enemy(ScreenObject):
             texture_y = texture_y - self.texture_size / 2
             bullet_start_x, bullet_start_y = geometry.rotate_point(texture_x, texture_y, angle)
             self.bullets.append(Bullet(self._world, self.world_x + bullet_start_x, self.world_y + bullet_start_y, player.world_x, player.world_y))
-            self.shoot_delay = config.ENEMY_SHOOT_DELAY * config.FRAMERATE
+            self.shoot_delay = config.ENEMY_SHOOT_DELAY
             self.bullet_sound.play()
 
     def draw(self, screen: pygame.Surface):
@@ -202,6 +204,6 @@ class Enemy(ScreenObject):
 
         self.hurt_sound.set_volume(max(1 - 0.5 * distance / self.torch_radius, 0))
         self.hurt_sound.play()
-        self.dead_timer = config.ENEMY_DEATH_TRACE_TIME * config.FRAMERATE        
+        self.dead_timer = config.ENEMY_DEATH_TRACE_TIME
         self.dead = True
         if player: player.kills += 1

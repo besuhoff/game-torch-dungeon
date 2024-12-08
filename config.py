@@ -33,7 +33,7 @@ PLAYER_TEXTURE_CENTER: Final = (PLAYER_TEXTURE_SIZE / 2 - 1, 26)
 PLAYER_GUN_END: Final = (PLAYER_TEXTURE_SIZE / 2 - 8, 64)
 PLAYER_TEXTURE: Final = os.path.join(ASSETS_FOLDER, 'player.png')
 PLAYER_LIVES: Final = 10
-PLAYER_INVULNERABILITY_TIME: Final = 1 # Seconds of invulnerability after getting hit
+PLAYER_INVULNERABILITY_TIME: Final = 1  # Seconds of invulnerability after getting hit
 PLAYER_HURT_SOUND: Final = os.path.join(ASSETS_FOLDER, 'player-grunt.ogg')
 PLAYER_ROTATION_SPEED: Final = 3  # Degrees per frame
 PLAYER_SHOOT_DELAY: Final = 0.2  # Seconds between shots
@@ -55,7 +55,7 @@ ENEMY_BLOOD_TEXTURE_SIZE: Final = 32
 ENEMY_SHOOT_DELAY: Final = 1 # Seconds between shots
 ENEMY_HURT_SOUND: Final = os.path.join(ASSETS_FOLDER, 'enemy-grunt.ogg')
 ENEMY_BULLET_SPEED: Final = 4
-ENEMY_DEATH_TRACE_TIME: Final = 5 # Seconds the blood stain is visible
+ENEMY_DEATH_TRACE_TIME: Final = 5  # Seconds the blood stain is visible
 
 # Bonuses settings
 BONUS_PICKUP_SOUND: Final = os.path.join(ASSETS_FOLDER, 'bonus.ogg')
@@ -67,4 +67,4 @@ AID_KIT_HEAL_AMOUNT: Final = 2
 
 GOGGLES_SIZE: Final = 32
 GOGGLES_TEXTURE: Final = os.path.join(ASSETS_FOLDER, 'goggles.png')
-GOOGLES_ACTIVE_TIME: Final = 20
+GOOGLES_ACTIVE_TIME: Final = 20  # Seconds of night vision mode
